@@ -1,42 +1,35 @@
+import hashlib
 import json
-
-# import requests
-
+import boto3
+from os import getenv
 
 def lambda_handler(event, context):
-    """Sample pure Lambda function
+    s3 = boto3.client('s3')
 
-    Parameters
-    ----------
-    event: dict, required
-        API Gateway Lambda Proxy Input Format
+    with open('/tmp/ids.csv', 'wb') as data:
+        s3.download_fileobj('lambda-coldstart', 'ids.csv', data)
 
-        Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
+    with open('/tmp/ids.csv', 'r') as data:
+        content = data.readlines()
 
-    context: object, required
-        Lambda Context runtime methods and attributes
+    content = [c[:-1] for c in content]
 
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
+    sha = hashlib.sha256()
+    for c in content:
+        sha.update(c.encode())
 
-    Returns
-    ------
-    API Gateway Lambda Proxy Output Format: dict
-
-        Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-    """
-
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
-
-    #     raise e
+    print('completed')
 
     return {
-        "statusCode": 200,
-        "body": json.dumps({
-            "message": "hello world",
-            # "location": ip.text.replace("\n", "")
-        }),
-    }
+            "statusCode": 200,
+            "body": json.dumps({
+                "result": "completed",
+            }),
+        }
+
+
+def warmup(event, context):
+    client = boto3.client('lambda')
+    client.invoke(FunctionName=getenv('TargetFunction'),
+                  InvocationType='Event',
+                  Payload="{}".encode('ascii'))

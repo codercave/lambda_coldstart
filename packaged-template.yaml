@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'lambda_coldstart
+
+  Sample SAM Template for lambda_coldstart
+
+  '
+Globals:
+  Function:
+    Timeout: 30
+Resources:
+  DemoService:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://cloudformation-442255044367/70d4f2364d6d6ff939ffa8a3d7621bff
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      MemorySize: 512
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /hello
+            Method: get
+      Policies:
+      - Ref: BucketAccess
+      Tracing: Active
+  BucketAccess:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Policy that allows to read from the bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:HeadObject
+          Resource:
+          - arn:aws:s3:::lambda-coldstart
+          - arn:aws:s3:::lambda-coldstart/*
+  Warmup:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://cloudformation-442255044367/70d4f2364d6d6ff939ffa8a3d7621bff
+      Handler: app.warmup
+      Runtime: python3.7
+      MemorySize: 128
+      Environment:
+        Variables:
+          TargetFunction:
+            Fn::GetAtt:
+            - DemoService
+            - Arn
+      Events:
+        WarmupThatLambda:
+          Type: Schedule
+          Properties:
+            Schedule: rate(10 minutes)
+      Policies:
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - lambda:InvokeAsync
+          - lambda:InvokeFunction
+          Resource:
+          - Fn::GetAtt:
+            - DemoService
+            - Arn
+Outputs:
+  DemoServiceApi:
+    Description: API Gateway endpoint URL for Prod stage for Hello World function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/
+  DemoServiceFunction:
+    Description: Hello World Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - DemoService
+      - Arn
+  DemoServiceFunctionIamRole:
+    Description: Implicit IAM Role created for Hello World function
+    Value:
+      Fn::GetAtt:
+      - DemoService
+      - Arn
