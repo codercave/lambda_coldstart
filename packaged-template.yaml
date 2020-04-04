@@ -12,7 +12,7 @@ Resources:
   DemoService:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://cloudformation-442255044367/70d4f2364d6d6ff939ffa8a3d7621bff
+      CodeUri: s3://cloudformation-442255044367/c9df4703c326f1fda1bc9ea7cc2033ce
       Handler: app.lambda_handler
       Runtime: python3.7
       MemorySize: 512
@@ -25,6 +25,9 @@ Resources:
       Policies:
       - Ref: BucketAccess
       Tracing: Active
+      AutoPublishAlias: live
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
   BucketAccess:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -39,35 +42,6 @@ Resources:
           Resource:
           - arn:aws:s3:::lambda-coldstart
           - arn:aws:s3:::lambda-coldstart/*
-  Warmup:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: s3://cloudformation-442255044367/70d4f2364d6d6ff939ffa8a3d7621bff
-      Handler: app.warmup
-      Runtime: python3.7
-      MemorySize: 128
-      Environment:
-        Variables:
-          TargetFunction:
-            Fn::GetAtt:
-            - DemoService
-            - Arn
-      Events:
-        WarmupThatLambda:
-          Type: Schedule
-          Properties:
-            Schedule: rate(10 minutes)
-      Policies:
-      - Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Action:
-          - lambda:InvokeAsync
-          - lambda:InvokeFunction
-          Resource:
-          - Fn::GetAtt:
-            - DemoService
-            - Arn
 Outputs:
   DemoServiceApi:
     Description: API Gateway endpoint URL for Prod stage for Hello World function

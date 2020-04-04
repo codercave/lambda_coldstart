@@ -1,7 +1,7 @@
 import hashlib
 import json
 import boto3
-from os import getenv
+
 
 def lambda_handler(event, context):
     s3 = boto3.client('s3')
@@ -26,10 +26,3 @@ def lambda_handler(event, context):
                 "result": "completed",
             }),
         }
-
-
-def warmup(event, context):
-    client = boto3.client('lambda')
-    client.invoke(FunctionName=getenv('TargetFunction'),
-                  InvocationType='Event',
-                  Payload="{}".encode('ascii'))

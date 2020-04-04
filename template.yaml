@@ -27,6 +27,9 @@ Resources:
       Policies:
         - !Ref BucketAccess
       Tracing: Active
+      AutoPublishAlias: 'live'
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
 
   BucketAccess:
     Type: AWS::IAM::ManagedPolicy
@@ -42,31 +45,6 @@ Resources:
             Resource:
               - 'arn:aws:s3:::lambda-coldstart'
               - 'arn:aws:s3:::lambda-coldstart/*'
-
-  Warmup:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-    Properties:
-      CodeUri: src/
-      Handler: app.warmup
-      Runtime: python3.7
-      MemorySize: 128
-      Environment:
-        Variables:
-          TargetFunction: !GetAtt DemoService.Arn
-      Events:
-        WarmupThatLambda:
-          Type: Schedule
-          Properties:
-            Schedule: rate(10 minutes)
-      Policies:
-        - Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Action:
-                - "lambda:InvokeAsync"
-                - "lambda:InvokeFunction"
-              Resource:
-                - !GetAtt DemoService.Arn
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
